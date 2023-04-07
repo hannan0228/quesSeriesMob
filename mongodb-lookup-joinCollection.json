@@ -1,0 +1,173 @@
+
+
+{
+    "title" : "my first post",
+    "author" : "Jim",
+    "likes" : 5
+},
+{
+    "title" : "my second post",
+    "author" : "Jim",
+    "likes" : 2
+},
+{
+    "title" : "hello world",
+    "author" : "Joe",
+    "likes" : 3
+}
+
+/*   *******comment collection********  */
+{
+    "postTitle" : "my first post",
+    "comment" : "great read",
+    "likes" : 3
+},
+{
+    "postTitle" : "my second post",
+    "comment" : "good info",
+    "likes" : 0
+},
+{
+    "postTitle" : "my second post",
+    "comment" : "i liked this post",
+    "likes" : 12
+},
+{
+    "postTitle" : "hello world",
+    "comment" : "not my favorite",
+    "likes" : 8
+},
+{
+    "postTitle" : "my last post",
+    "comment" : null,
+    "likes" : 0
+}
+
+/*
+db.posts.aggregate([
+    { $lookup:
+        {
+           from: "comments",
+           localField: "title",
+           foreignField: "postTitle",
+           as: "comments"
+        }
+    }
+])
+
+ from: the collection we want to join with
+localField: the field we want to join by in the local collection (the collection we are running the query on)
+foreignField: the field we want to join by in the foreign collection (the collection we want to join with)
+as: the name of the output array for the results */
+{
+    "title" : "my first post",
+    "author" : "Jim",
+    "likes" : 5,
+    "comments" : [
+        {
+            "postTitle" : "my first post",
+            "comment" : "great read",
+            "likes" : 3
+        }
+    ]
+},
+{
+    "title" : "my second post",
+    "author" : "Jim",
+    "likes" : 2,
+    "comments" : [
+        {
+            "postTitle" : "my second post",
+            "comment" : "good info",
+            "likes" : 0
+        },
+        {
+            "postTitle" : "my second post",
+            "comment" : "i liked this post",
+            "likes" : 12
+        }
+    ]
+},
+{
+    "title" : "hello world",
+    "author" : "Joe",
+    "likes" : 3,
+    "comments" : [
+        {
+            "postTitle" : "hello world",
+            "comment" : "not my favorite",
+            "likes" : 8
+        }
+    ]
+}
+
+
+/* db.posts.aggregate([
+ { $lookup:
+     {
+       from: "comments",
+       let: { post_likes: "$likes", post_title: "$title"},
+       pipeline: [
+            { $match:
+                { $expr:
+                    { $and:
+                        [
+                           { $gt: [ "$likes", "$$post_likes"] },
+                           { $eq: ["$$post_title", "$postTitle" ] }
+                        ]
+                    }
+                }
+            }
+        ],
+        as: "comments"
+        }
+ }
+])
+
+Notice how $lookup takes slightly different fields. Specifically the localField and foreignField fields have been replaced with:
+
+let (optional): an expression defining variables to use in the pipeline stage. This is how you access fields from the input collection in the pipeline stage.
+pipeline: an aggregation pipeline to execute on the collection to join
+Notice how we define two variables in the let expression. We define post_likes and post_title so that we can reference the input documents in the pipeline stage.
+
+This is the only way for us to make comparisons across the different collections...
+
+{ $gt: [ "$likes", "$$post_likes"] },
+{ $eq: ["$$post_title", "$postTitle" ] }
+Notice how we use $$ to refer to the variables we defined in let. We reference fields in the foreign collection with a single $.
+
+This query returns the following..
+*/
+
+
+{
+    "title" : "my first post",
+    "author" : "Jim",
+    "likes" : 5,
+    "comments" : []
+},
+{
+    "title" : "my second post",
+    "author" : "Jim",
+    "likes" : 2,
+    "comments" : [
+        {
+            "postTitle" : "my second post",
+            "comment" : "i liked this post",
+            "likes" : 12
+        }
+    ]
+},
+{
+    "title" : "hello world",
+    "author" : "Joe",
+    "likes" : 3,
+    "comments" : [
+        {
+            "postTitle" : "hello world",
+            "comment" : "not my favorite",
+            "likes" : 8
+        }
+    ]
+}
+

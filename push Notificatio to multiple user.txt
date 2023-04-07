@@ -1,0 +1,113 @@
+Sending notifications to 1000 users at one time can be achieved through various ways depending on the requirements and available resources. Here are a few possible approaches:
+
+Using a third-party notification service:
+A third-party notification service, such as Firebase Cloud Messaging (FCM) ,Supabase() or Amazon Simple Notification Service (SNS), can be used to send notifications to a large number of users simultaneously. These services provide scalable and reliable notification delivery, and often offer features such as segmentation, targeting, and analytics.
+
+
+Here is implementation of firebase----->
+
+
+npm install firebase @angular/fire --save
+
+Step 1: creating manifest.json
+Push Notifications use Service Worker browser, which must be registered in this manifest.
+
+touch src/manifest.json
+
+
+file will show like this
+{
+  "gcm_sender_id": "103953800507"
+}
+view rawmanifest.json
+
+
+
+
+After create manifest.json, we need to add manifest.json in index.html.
+
+<head>
+...
+    <link rel="manifest" href="/manifest.json">
+...
+
+</head>
+
+
+Step 2: creating firebase-messaging-sw.js
+
+Service Worker allows your app to detect new messages, even after the app has been closed by the user.
+
+
+touch src/firebase-messaging-sw.js
+
+
+// Give the service worker access to Firebase Messaging.
+// Note that you can only use Firebase Messaging here, other Firebase libraries
+// are not available in the service worker.
+importScripts('https://www.gstatic.com/firebasejs/5.5.0/firebase-app.js');
+importScripts('https://www.gstatic.com/firebasejs/5.5.0/firebase-messaging.js');
+
+// Initialize the Firebase app in the service worker by passing in the
+// messagingSenderId.
+firebase.initializeApp({
+  'messagingSenderId': 'YOUR-SENDER-ID'
+});
+
+// Retrieve an instance of Firebase Messaging so that it can handle background
+// messages.
+const messaging = firebase.messaging();
+view rawfirebase-messaging-sw.js
+
+
+You need to replace YOUR-SENDER-ID with your Sender ID. You can find out your Sender ID in Firebase Console by open Setting > Cloud Messaging.
+
+Step 3: creating provider for application
+
+Then, we need source code to handle user permission and handle when new message has received.
+
+touch src/app/shared/messaging.service.ts
+
+
+requestPermission() : Browser/ device will ask to user for permission to receive notification. After permission is granted by user, firebase will return a token that can use as reference to send notification to the browser.
+
+updateToken(): Update token based on userId to Firebase DB. You can replace this function based what need like update to your DB via back-end service. Remember, you need to change database permission to can write new/update object.
+
+receiveMessage() : This function will triggered when new massage has received.
+
+Step 4: configuring your application
+
+Before can start our application need to configure our application for environment and add new assets.
+
+
+You can find your configuration in Firebase Console by open Authentication > Web Setup
+
+
+Now we need to add manifest.json and firebase-messaging-sw.js in angular.json. make sure these two file included when we run or deploy the application to web server.
+
+
+Step 5: Implementation
+
+Finally You can use MessagingService in your component but i recommend you to use these method in your AppComponent (root component) because normally you only need once to use MessagingService and browser will ask the permission at the time to open your application/component via browser.
+
+
+
+**************You can also hit Firebase Cloud Messaging directly using cURL.*************
+
+curl -X POST \
+  https://fcm.googleapis.com/fcm/send \
+  -H 'Authorization: key=YOUR-SERVER-KEY' \
+  -H 'Content-Type: application/json' \
+  -d '{ 
+ "notification": {
+  "title": "Push Notification", 
+  "body": "This is Message from Admin"
+ },
+ "to" : "YOUR-GENERATED-TOKEN"
+}
+
+YOUR-SERVER-KEY : Find out in Firebase console by open Setting > Cloud Messaging. go to step 2.
+
+YOUR-GENERATED-TOKEN : or open Firebase DB
+
+
